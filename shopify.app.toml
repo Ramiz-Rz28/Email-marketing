@@ -5,7 +5,7 @@ application_url = "https://REPLACE.up.railway.app"
 embedded = false
 
 [access_scopes]
-scopes = "read_customers,read_orders,read_products,read_checkouts,write_discounts"
+scopes = "read_customers,read_orders,read_all_orders,read_products,read_checkouts,write_discounts"
 
 [auth]
 redirect_urls = ["https://REPLACE.up.railway.app/api/shopify/callback"]

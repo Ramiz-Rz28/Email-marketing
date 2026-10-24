@@ -17,7 +17,7 @@ const schema = z.object({
   SHOPIFY_API_SECRET: z.string().default(""),
   SHOPIFY_SCOPES: z
     .string()
-    .default("read_customers,read_orders,read_products,read_checkouts,write_discounts"),
+    .default("read_customers,read_orders,read_all_orders,read_products,read_checkouts,write_discounts"),
   SHOPIFY_API_VERSION: z.string().default("2026-07"),
 
   RESEND_API_KEY: z.string().default(""),
