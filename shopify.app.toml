@@ -1,0 +1,14 @@
+# Shopify Partner app config (reference; webhooks are also registered via API on install).
+name = "Lifecycle Email"
+client_id = "REPLACE_WITH_SHOPIFY_API_KEY"
+application_url = "https://REPLACE.up.railway.app"
+embedded = false
+
+[access_scopes]
+scopes = "read_customers,read_orders,read_products,read_checkouts,write_discounts"
+
+[auth]
+redirect_urls = ["https://REPLACE.up.railway.app/api/shopify/callback"]
+
+[webhooks]
+api_version = "2026-07"
