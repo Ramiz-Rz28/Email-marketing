@@ -1,0 +1,50 @@
+{
+  "name": "email-marketing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-operated Shopify lifecycle email marketing (Klaviyo alternative). Next.js + HeroUI v3 + Clerk + Supabase + pg-boss + Resend + Maily.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p ${PORT:-3000}",
+    "worker": "tsx worker/index.ts",
+    "worker:dev": "tsx watch worker/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
+    "@clerk/nextjs": "^7.9.20",
+    "@heroui/react": "^3.2.6",
+    "@heroui/styles": "^3.2.6",
+    "@maily-to/core": "^0.3.7",
+    "@maily-to/render": "^0.2.3",
+    "@shopify/shopify-api": "^15.0.1",
+    "lucide-react": "^0.560.0",
+    "next": "^16.4.3",
+    "pg-boss": "^12.38.0",
+    "postgres": "^3.4.9",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "resend": "^6.34.1",
+    "svix": "^2.9.0",
+    "tailwind-variants": "^3.1.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "dotenv": "^17.0.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

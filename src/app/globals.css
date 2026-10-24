@@ -1,0 +1,15 @@
+/* Tailwind CSS v4 must come first */
+@import "tailwindcss";
+/* HeroUI v3 styles after Tailwind */
+@import "@heroui/styles";
+/* Maily editor styles, scoped by wrapper class in the editor page */
+@import "@maily-to/core/style.css";
+
+@source "../../node_modules/@heroui/react/dist/**/*.js";
+
+:root {
+  --app-sidebar-width: 15rem;
+}
+
+html, body { height: 100%; }
+body { background: var(--background); color: var(--foreground); }
