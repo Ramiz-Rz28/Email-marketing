@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "email-marketing",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "email-marketing" }],
+  "images": { "binding": "IMAGES" },
+  "observability": { "enabled": true },
+  // Hyperdrive pools Supabase Postgres connections at the edge (recommended once DATABASE_URL works).
+  // Create: npx wrangler hyperdrive create email-marketing-db --connection-string="postgresql://postgres.<ref>:<pw>@aws-0-<region>.pooler.supabase.com:5432/postgres"
+  // then uncomment and paste the id. Until then src/lib/db.ts falls back to the DATABASE_URL secret.
+  // "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-id>", "localConnectionString": "postgresql://postgres@localhost:5432/postgres" }],
+  // Non-secret runtime vars. Secrets (CLERK_SECRET_KEY, DATABASE_URL, SHOPIFY_API_SECRET, RESEND_API_KEY,
+  // RESEND_WEBHOOK_SECRET, ANTHROPIC_API_KEY) go in: npx wrangler secret put <NAME>
+  "vars": {
+    "NEXTJS_ENV": "production",
+    "NODE_ENV": "production",
+    "SHOPIFY_API_VERSION": "2026-07",
+    "AI_MODEL_FAST": "claude-haiku-5-5",
+    "AI_MODEL_SMART": "claude-sonnet-5-5"
+  }
+}

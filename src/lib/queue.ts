@@ -1,5 +1,6 @@
-import { PgBoss } from "pg-boss";
-import { directDatabaseUrl } from "./db";
+import { PgBoss, type Db as IDatabase } from "pg-boss";
+import { directDatabaseUrl, sql } from "./db";
+import { isCloudflareWorker } from "./runtime/cloudflare";
 
 /**
  * pg-boss job names. Keep every queue name here so web + worker agree.
@@ -31,20 +32,33 @@ declare global {
 
 let starting: Promise<PgBoss> | undefined;
 
+/**
+ * pg-boss database adapter over our postgres.js client. Used on Cloudflare Workers,
+ * where there is no long-lived process: the web app only needs to INSERT jobs,
+ * never to poll, supervise or run cron. The Railway worker uses pg-boss's own pool.
+ */
+const sqlAdapter: IDatabase = {
+  async executeSql(text: string, values: unknown[] = []) {
+    const rows = await sql.unsafe(text, values as never[]);
+    return { rows: rows as unknown as unknown[] };
+  },
+};
+
 /** Lazily started singleton. Web uses it to `send`; worker uses it to `work`. */
 export async function getBoss(): Promise<PgBoss> {
   if (globalThis.__boss) return globalThis.__boss;
   if (starting) return starting;
   starting = (async () => {
-    const boss = new PgBoss({
-      connectionString: directDatabaseUrl(),
-      schema: "pgboss",
-      max: 4,
-    });
+    const onWorkers = isCloudflareWorker() || process.env.PGBOSS_SEND_ONLY === "1";
+    const boss = onWorkers
+      ? new PgBoss({ db: sqlAdapter, schema: "pgboss", migrate: false, supervise: false, schedule: false })
+      : new PgBoss({ connectionString: directDatabaseUrl(), schema: "pgboss", max: 4 });
     boss.on("error", (err: unknown) => console.error("[pg-boss]", err));
     await boss.start();
-    for (const name of Object.values(JOBS)) {
-      await boss.createQueue(name).catch(() => undefined); // idempotent
+    if (!onWorkers) {
+      for (const name of Object.values(JOBS)) {
+        await boss.createQueue(name).catch(() => undefined); // idempotent; queues are owned by the Node worker
+      }
     }
     globalThis.__boss = boss;
     return boss;

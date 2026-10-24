@@ -11,3 +11,9 @@ next-env.d.ts
 npm-debug.log*
 .vercel
 coverage/
+
+# Cloudflare / OpenNext
+.open-next/
+.wrangler/
+.dev.vars
+cloudflare-env.d.ts

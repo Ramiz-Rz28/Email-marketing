@@ -45,7 +45,11 @@ scripts/              migrate, seed
 supabase/migrations   SQL
 ```
 
-## Deploy (Railway, two services from this repo)
-- `web`: build `npm run build`, start `npm start` (PORT provided).
-- `worker`: start `npm run worker`.
-- Both need the same env (see `.env.example`). Run `npm run db:migrate` once per deploy (web pre-deploy command).
+## Deploy (hybrid)
+- **web** → Cloudflare Workers via OpenNext (`wrangler.jsonc`). Workers Builds deploys on push to `main`.
+  Hyperdrive binding `HYPERDRIVE` (optional) is read in `src/lib/db.ts`; pg-boss runs in send-only mode
+  there (`src/lib/queue.ts`). Never add long-lived timers/pollers to web code.
+- **worker** → Railway Node service: `npm run worker`, pre-deploy `npm run db:migrate`.
+- Shopify SDK uses the `web-api` adapter so the same code runs on Node and Workers.
+- Packages that resolve differently under the `workerd` export condition are listed in
+  `next.config.ts` → `outputFileTracingIncludes`; add there if OpenNext reports "Could not resolve".

@@ -60,15 +60,36 @@ Lifecycle jobs in V1: **cart recovery**, **second purchase**, **win-back / reple
 Only audience stats and candidate products go in the user message. `campaign_briefs.usage` records
 `cache_read_input_tokens` so cost per brief is visible. Haiku handles copy, Sonnet handles planning.
 
-## Deploy on Railway
+## Deploy — hybrid: web on Cloudflare Workers, jobs on Railway
 
-Two services from this repo, same env vars:
+The web app runs on **Cloudflare Workers** via OpenNext (`wrangler.jsonc`, `open-next.config.ts`).
+The background worker (`worker/index.ts`) is a long-running Node process that polls Postgres through
+pg-boss, which Workers cannot host, so it stays on **Railway** (`railway.worker.json`). Both talk to the
+same Supabase database; the web app only *enqueues* jobs (send-only pg-boss over postgres.js), the
+Railway worker runs them.
 
-- **web** — build `npm run build`, pre-deploy `npm run db:migrate`, start `npm start`
-- **worker** — start `npm run worker`
+**Cloudflare (web)** — Workers Builds is connected to this repo: every push to `main` runs
+`npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`. Requires the Workers **Paid** plan
+(bundle is ~4.8 MB gzipped; Free caps at 3 MB and 10 ms CPU).
 
-Set `NEXT_PUBLIC_APP_URL` to the web service's public URL; Shopify redirect URL is
-`{APP_URL}/api/shopify/callback`, Resend webhook is `{APP_URL}/api/webhooks/resend`.
+Runtime secrets (set once, in the Worker's Settings → Variables, or `npx wrangler secret put <NAME>`):
+`CLERK_SECRET_KEY`, `DATABASE_URL` (Supabase *transaction pooler* URL), `SHOPIFY_API_KEY`,
+`SHOPIFY_API_SECRET`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`.
+Build variables (Workers Builds settings): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` must be the real key
+(it is baked into the client bundle); `NEXT_PUBLIC_APP_URL` likewise.
+
+Optional but recommended: Hyperdrive. `npx wrangler hyperdrive create email-marketing-db
+--connection-string="<supabase pooler url>"`, then uncomment the `hyperdrive` block in `wrangler.jsonc`;
+`src/lib/db.ts` picks the binding up automatically.
+
+Local: `npm run cf:preview` runs the Worker in workerd with `.dev.vars`.
+
+**Railway (worker)** — one service from this repo: start `npm run worker`, pre-deploy `npm run db:migrate`,
+same env vars as above plus `DATABASE_DIRECT_URL` (non-pooled, for pg-boss and migrations).
+
+External URLs: Shopify redirect `{APP_URL}/api/shopify/callback`, Resend webhook
+`{APP_URL}/api/webhooks/resend`, Shopify webhooks `{APP_URL}/api/webhooks/shopify`.
 
 ## Guardrails (non-negotiable)
 

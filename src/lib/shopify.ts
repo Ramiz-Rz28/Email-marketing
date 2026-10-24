@@ -1,4 +1,5 @@
-import "@shopify/shopify-api/adapters/node";
+// fetch + WebCrypto based adapter: works on Node 22 (Railway worker) and Cloudflare Workers alike.
+import "@shopify/shopify-api/adapters/web-api";
 import { shopifyApi, ApiVersion, LogSeverity, Session } from "@shopify/shopify-api";
 import { env } from "./env";
 

@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "postgres";
 import { env } from "./env";
+import { cloudflareEnv } from "./runtime/cloudflare";
 
 /**
  * Single postgres.js client for the process (Next.js server or worker).
@@ -11,17 +12,41 @@ declare global {
   var __sql: Sql | undefined;
 }
 
-export const sql: Sql =
-  globalThis.__sql ??
-  postgres(env().DATABASE_URL, {
-    max: 10,
+/** On Cloudflare the Hyperdrive binding supplies a pooled connection string; elsewhere DATABASE_URL. */
+function appDatabaseUrl(): string {
+  const cf = cloudflareEnv();
+  return cf?.HYPERDRIVE?.connectionString ?? env().DATABASE_URL;
+}
+
+let instance: Sql | undefined;
+
+/**
+ * Lazily created so that on Cloudflare the first query runs inside a request
+ * (where the Hyperdrive binding is readable) rather than at module evaluation.
+ */
+function getSql(): Sql {
+  if (instance) return instance;
+  if (globalThis.__sql) return (instance = globalThis.__sql);
+  instance = postgres(appDatabaseUrl(), {
+    max: cloudflareEnv() ? 2 : 10, // Hyperdrive does the real pooling; keep per-isolate connections tiny
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false, // required for Supabase transaction pooler (pgbouncer)
     transform: { undefined: null },
   });
+  if (process.env.NODE_ENV !== "production") globalThis.__sql = instance;
+  return instance;
+}
 
-if (process.env.NODE_ENV !== "production") globalThis.__sql = sql;
+/** The postgres.js client. Behaves exactly like a real `Sql` (tagged template + helpers); created on first use. */
+export const sql: Sql = new Proxy(function sqlProxy() {} as unknown as Sql, {
+  apply: (_target, thisArg, args) => Reflect.apply(getSql() as unknown as (...a: unknown[]) => unknown, thisArg, args),
+  get: (_target, prop) => {
+    const real = getSql() as unknown as Record<PropertyKey, unknown>;
+    const value = real[prop];
+    return typeof value === "function" ? (value as (...a: unknown[]) => unknown).bind(real) : value;
+  },
+});
 
 /** Direct (non-pooled) connection string for pg-boss and migrations. */
 export function directDatabaseUrl(): string {
